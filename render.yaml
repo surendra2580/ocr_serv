@@ -3,5 +3,5 @@ services:
     name: ocr-service
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: cd ocr-service && gunicorn wsgi:app
+    startCommand: gunicorn wsgi:app
     plan: free
