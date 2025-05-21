@@ -15,7 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose the port the app runs on
-EXPOSE 5000
+ENV PORT=5000
+EXPOSE $PORT
 
 # Command to run the application
-CMD ["python", "app.py"] 
+CMD gunicorn wsgi:app --bind 0.0.0.0:$PORT 
