@@ -13,6 +13,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Set Tesseract path
+pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+
 app = Flask(__name__)
 
 @app.route('/')
