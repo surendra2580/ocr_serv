@@ -5,6 +5,7 @@ import os
 import logging
 import sys
 import platform
+import subprocess
 
 # Configure logging
 logging.basicConfig(
@@ -14,18 +15,50 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Set Tesseract path based on the operating system
-if platform.system() == 'Windows':
-    pytesseract.pytesseract.tesseract_cmd = r'C:\Users\ZEN59\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
-else:
-    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+def verify_tesseract_installation():
+    try:
+        # Check if tesseract is installed
+        if platform.system() == 'Windows':
+            tesseract_path = r'C:\Users\ZEN59\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
+            if not os.path.exists(tesseract_path):
+                logger.error(f"Tesseract not found at {tesseract_path}")
+                return False
+        else:
+            # On Linux, try to find tesseract in common locations
+            possible_paths = ['/usr/bin/tesseract', '/usr/local/bin/tesseract']
+            tesseract_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    tesseract_path = path
+                    break
+            
+            if not tesseract_path:
+                # Try to find tesseract using which command
+                try:
+                    result = subprocess.run(['which', 'tesseract'], capture_output=True, text=True)
+                    if result.returncode == 0:
+                        tesseract_path = result.stdout.strip()
+                except Exception as e:
+                    logger.error(f"Error finding tesseract: {str(e)}")
+            
+            if not tesseract_path:
+                logger.error("Tesseract not found in common locations")
+                return False
+        
+        # Set the tesseract path
+        pytesseract.pytesseract.tesseract_cmd = tesseract_path
+        
+        # Verify tesseract version
+        version = pytesseract.get_tesseract_version()
+        logger.info(f"Tesseract version: {version}")
+        return True
+    except Exception as e:
+        logger.error(f"Error verifying Tesseract installation: {str(e)}")
+        return False
 
 # Verify Tesseract installation
-try:
-    version = pytesseract.get_tesseract_version()
-    logger.info(f"Tesseract version: {version}")
-except Exception as e:
-    logger.error(f"Tesseract error: {str(e)}")
+if not verify_tesseract_installation():
+    logger.error("Tesseract installation verification failed")
 
 app = Flask(__name__)
 
