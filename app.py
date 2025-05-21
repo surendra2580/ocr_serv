@@ -15,43 +15,70 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def find_tesseract_path():
+    """Find the Tesseract executable path."""
+    if platform.system() == 'Windows':
+        # Windows paths
+        possible_paths = [
+            r'C:\Users\ZEN59\AppData\Local\Programs\Tesseract-OCR\tesseract.exe',
+            r'C:\Program Files\Tesseract-OCR\tesseract.exe',
+            r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe'
+        ]
+    else:
+        # Linux paths
+        possible_paths = [
+            '/usr/bin/tesseract',
+            '/usr/local/bin/tesseract',
+            '/opt/homebrew/bin/tesseract'
+        ]
+        # Try to find tesseract using which command
+        try:
+            result = subprocess.run(['which', 'tesseract'], capture_output=True, text=True)
+            if result.returncode == 0:
+                possible_paths.insert(0, result.stdout.strip())
+        except Exception as e:
+            logger.error(f"Error running which command: {str(e)}")
+
+    # Check each possible path
+    for path in possible_paths:
+        if os.path.exists(path):
+            logger.info(f"Found Tesseract at: {path}")
+            return path
+
+    logger.error("Tesseract not found in any of the expected locations")
+    return None
+
 def verify_tesseract_installation():
+    """Verify Tesseract installation and set up the path."""
     try:
-        # Check if tesseract is installed
-        if platform.system() == 'Windows':
-            tesseract_path = r'C:\Users\ZEN59\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
-            if not os.path.exists(tesseract_path):
-                logger.error(f"Tesseract not found at {tesseract_path}")
-                return False
-        else:
-            # On Linux, try to find tesseract in common locations
-            possible_paths = ['/usr/bin/tesseract', '/usr/local/bin/tesseract']
-            tesseract_path = None
-            for path in possible_paths:
-                if os.path.exists(path):
-                    tesseract_path = path
-                    break
-            
-            if not tesseract_path:
-                # Try to find tesseract using which command
-                try:
-                    result = subprocess.run(['which', 'tesseract'], capture_output=True, text=True)
-                    if result.returncode == 0:
-                        tesseract_path = result.stdout.strip()
-                except Exception as e:
-                    logger.error(f"Error finding tesseract: {str(e)}")
-            
-            if not tesseract_path:
-                logger.error("Tesseract not found in common locations")
-                return False
-        
+        # Find Tesseract path
+        tesseract_path = find_tesseract_path()
+        if not tesseract_path:
+            return False
+
         # Set the tesseract path
         pytesseract.pytesseract.tesseract_cmd = tesseract_path
-        
+
         # Verify tesseract version
         version = pytesseract.get_tesseract_version()
         logger.info(f"Tesseract version: {version}")
-        return True
+
+        # Test OCR with a simple image
+        try:
+            # Create a simple test image
+            from PIL import Image, ImageDraw
+            test_image = Image.new('RGB', (100, 100), color='white')
+            draw = ImageDraw.Draw(test_image)
+            draw.text((10, 10), "Test", fill='black')
+            
+            # Try OCR on the test image
+            text = pytesseract.image_to_string(test_image)
+            logger.info("Tesseract OCR test successful")
+            return True
+        except Exception as e:
+            logger.error(f"Tesseract OCR test failed: {str(e)}")
+            return False
+
     except Exception as e:
         logger.error(f"Error verifying Tesseract installation: {str(e)}")
         return False
