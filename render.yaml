@@ -3,11 +3,12 @@ services:
     name: ocr-service
     env: python
     buildCommand: |
-      apt-get update && apt-get install -y tesseract-ocr
+      sudo apt-get update
+      sudo apt-get install -y tesseract-ocr
       pip install --upgrade pip
       pip install -r requirements.txt
-      echo "export TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata" >> ~/.bashrc
     startCommand: |
+      export PATH=$PATH:/usr/bin
       export TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata
       gunicorn wsgi:app --bind 0.0.0.0:$PORT
     plan: free

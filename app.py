@@ -4,6 +4,7 @@ import pytesseract
 import os
 import logging
 import sys
+import subprocess
 
 # Configure logging
 logging.basicConfig(
@@ -13,8 +14,36 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Try to find Tesseract path
+def find_tesseract():
+    try:
+        # Try to find tesseract in PATH
+        result = subprocess.run(['which', 'tesseract'], capture_output=True, text=True)
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except Exception as e:
+        logger.warning(f"Error finding tesseract: {str(e)}")
+    
+    # Common paths to try
+    common_paths = [
+        '/usr/bin/tesseract',
+        '/usr/local/bin/tesseract',
+        '/opt/homebrew/bin/tesseract'
+    ]
+    
+    for path in common_paths:
+        if os.path.exists(path):
+            return path
+    
+    return None
+
 # Set Tesseract path
-pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+tesseract_path = find_tesseract()
+if tesseract_path:
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
+    logger.info(f"Found Tesseract at: {tesseract_path}")
+else:
+    logger.warning("Tesseract not found in common locations")
 
 app = Flask(__name__)
 
