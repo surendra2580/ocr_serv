@@ -4,7 +4,7 @@ import pytesseract
 import os
 import logging
 import sys
-import subprocess
+import platform
 
 # Configure logging
 logging.basicConfig(
@@ -14,8 +14,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Set Tesseract path for Windows
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\ZEN59\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
+# Set Tesseract path based on the operating system
+if platform.system() == 'Windows':
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Users\ZEN59\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
+else:
+    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
 
 # Verify Tesseract installation
 try:
